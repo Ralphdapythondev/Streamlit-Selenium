@@ -12,11 +12,15 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 
 
-# Function to create a directory for screenshots
+def get_logpath() -> str:
+    """Ensure the directory exists and return the log file path."""
+    log_dir = os.path.join(os.getcwd(), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, 'selenium.log')
+
+
 def create_screenshot_dir():
     screenshot_dir = os.path.join(os.getcwd(), "screenshots")
     os.makedirs(screenshot_dir, exist_ok=True)
@@ -38,6 +42,48 @@ def extract_contact_info(html_content: str) -> dict:
         "phone_numbers": re.findall(r"\+?\d[\d -]{8,}\d", html_content)
     }
     return contact_info
+
+
+def get_chromedriver_path() -> str:
+    return shutil.which('chromedriver')
+
+
+def get_webdriver_options(proxy: str = None, socksStr: str = None) -> Options:
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--window-size=1920x1080")
+    options.add_argument("--disable-features=VizDisplayCompositor")
+    options.add_argument('--ignore-certificate-errors')
+    if proxy is not None and socksStr is not None:
+        options.add_argument(f"--proxy-server={socksStr}://{proxy}")
+    options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+    return options
+
+
+def get_webdriver_service(logpath) -> Service:
+    service = Service(
+        executable_path=get_chromedriver_path(),
+        log_output=logpath,
+    )
+    return service
+
+
+def delete_selenium_log(logpath: str):
+    if os.path.exists(logpath):
+        os.remove(logpath)
+
+
+def show_selenium_log(logpath: str):
+    if os.path.exists(logpath):
+        with open(logpath) as f:
+            content = f.read()
+            st.code(body=content, language='log', line_numbers=True)
+    else:
+        st.error('No log file found!', icon='🔥')
 
 
 def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: str, screenshot_dir: str) -> Tuple[str, dict]:
