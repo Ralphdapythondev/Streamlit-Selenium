@@ -95,9 +95,3 @@ streamlit-cloud-scraper/
 - **Proxy Errors**: Make sure the proxy settings are correct and that the proxy is functional.
 - **Permissions**: Ensure the application has the necessary permissions to create directories and write files in the working directory.
 
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-This Markdown file (`README.md`) should be placed in the root directory of your project. It provides an overview of the application, installation instructions, usage guidelines, and other relevant information.
