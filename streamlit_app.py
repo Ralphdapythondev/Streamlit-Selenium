@@ -175,7 +175,7 @@ if __name__ == "__main__":
     logpath = get_logpath()
     delete_selenium_log(logpath=logpath)
 
-    st.set_page_config(page_title="Selenium Test", page_icon='🕸️', layout="wide", initial_sidebar_state='collapsed')
+    st.set_page_config(page_title="Streamlit Cloud Scraper", page_icon='🕸️', layout="wide", initial_sidebar_state='collapsed')
 
     screenshot_dir = create_screenshot_dir()
 
