@@ -1,138 +1,103 @@
-<!-- markdownlint-disable MD026 -->
-# Streamlit Selenium Test
+# Streamlit Cloud Scraper 🕸️
 
-Streamlit project to test Selenium running in Streamlit Cloud runtime.
+This Streamlit application is designed to automate the process of taking screenshots of web pages, extracting contact information, and downloading the results. The application utilizes Selenium WebDriver and offers proxy support to bypass geo-restrictions.
 
-- [x] **Local Windows 10** machine works
-- [x] **Local Docker** container works
-- [x] **Streamlit Cloud** runtime works, see example app here: [![Docker](https://img.shields.io/badge/Go%20To-Streamlit%20Cloud-red?logo=streamlit)](https://selenium-example.streamlit.app/)
+## Features
 
-## Issues :bug:
+- **Screenshot Capture**: Automatically takes a screenshot of the specified web page.
+- **Contact Information Extraction**: Extracts emails and phone numbers from the page's content.
+- **Text Content Extraction**: Extracts all visible text from the web page.
+- **Proxy Support**: Optional proxy configuration to bypass geo-blocking, supporting SOCKS4 and SOCKS5 proxies.
+- **Download Options**: Allows users to download the screenshot and extracted text content.
+- **Version Information**: Displays version information for Python, Streamlit, Selenium, Chromedriver, and Chromium.
+- **Logging**: Captures and displays Selenium logs for debugging.
 
-- Example fails on Streamlit Cloud with a `TimeoutException`, due to a `403` response, because **GeoIP blocking** is active on the target website. Therefore a **proxy** can be enabled optionally to bypass this.
-- However, the proxies are not very reliable, because only free proxies are used here. Therefore, the example is not very stable with enabled proxies and can fail sometimes. Sometimes, no proxies are available.
+## Requirements
 
-## ToDo :ballot_box_with_check:
+- Python 3.6+
+- Streamlit
+- Selenium
+- BeautifulSoup (`beautifulsoup4`)
+- Chromedriver (Make sure `chromedriver` is installed and accessible)
 
-- [ ] improve example
-- [ ] fix proxy issues
-- [ ] try also `undetected_chromedriver` package
-- [ ] try also `seleniumbase` package
+## Installation
 
-## Problem :thinking:
+1. **Clone the Repository**
 
-The suggestion for this repo came from a post on the Streamlit Community Forum.
+   ```bash
+   git clone https://github.com/your-repo/streamlit-cloud-scraper.git
+   cd streamlit-cloud-scraper
+   ```
 
-<https://discuss.streamlit.io/t/issue-with-selenium-on-a-streamlit-app/11563>
+2. **Create a Virtual Environment**
 
-It is not that easy to install and use Selenium based webscraper in container based environments.
-On the local computer, this usually works much more smoothly because a browser is already installed and can be controlled by the associated webdriver.
-In container-based environments, however, **headless** operation is **mandatory** because no UI can be used there.
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
 
-Therefore, in this repository a small example is given to get Selenium working on:
+3. **Install Dependencies**
 
-- **Local Windows 10** machine
-- **Local Docker** container that mimics the Streamlit Cloud runtime
-- **Streamlit Community Cloud** runtime
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Proxy :sunglasses:
+4. **Run the Application**
 
-Because some websites block requests based on countries (aka geoip blocking) or from certain IP ranges, a proxy can be used to bypass this. The example app has a checkbox to enable a proxy. You can choose between socks4 and socks5 proxies. However, socks4 does not work at all. The socks5 proxy is a free socks5 proxy from a public list and is not very reliable. Therefore, the example is not very stable with enabled proxies and can fail quite often.
+   ```bash
+   streamlit run streamlit_app.py
+   ```
 
-## Pitfalls :triangular_flag_on_post:
+## How to Use
 
-- To use Selenium (even headless in a container) you need always **two** components to be installed on your machine:
-  - A **webbrowser** and its associated **webdriver**.
-- The **version** of the headless webbrowser and its associated webdriver must always **match**.
-- If your are using Selenium in a docker container or on Streamlit Cloud, the `--headless` option is mandatory, because there is no graphical user interface available.
-- There are three options of webbrowser/webdriver combinations for Selenium:
-    1. `chrome & chromedriver`
-    2. `chromium & chromedriver`
-    3. `firefox & geckodriver`
-- Unfortunately in the default Debian Bullseye apt package repositories, not all of these packages are available. If we want an installation from the default repositories, only `chromium & chromedriver` is left.
-- The chromedriver has a lot of options, that can be set. It may be necessary to tweak these options on different platforms to make headless operation work.
-- The chromedriver, selenium and its options change quite a lot over time. A lot of information on stackoverflow regarding chromedriver/selenium is outdated.
-- The deployment to Streamlit Cloud has unfortunately failed sometimes in the past. A concrete cause of the error or an informative error message could not be identified. Currently it seems to be stable on Streamlit Cloud.
-- To run this streamlit app on **Windows**, the Windows `chromedriver.exe` must be stored here in the root folder or added to the Windows PATH. Be aware, that the version of this chromedriver must match the version of your installed Chrome browser.
+### 1. Input URL
 
-## Development Setup :hammer_and_wrench:
+Enter the URL of the webpage you want to scrape in the provided text input field.
 
-In the Streamlit Cloud runtime, neither chrome, chromedriver nor geckodriver are available in the default apt package sources.
+### 2. Proxy Configuration (Optional)
 
-The Streamlit Cloud runtime seems to be very similar to the official docker image `python:3.XX-slim-bullseye` on Docker Hub, which is based on Debian Bullseye.
+- **Enable Proxy**: Toggle to enable proxy support.
+- **Select Proxy Type**: Choose between SOCKS4 and SOCKS5.
+- **Refresh Proxy List**: If proxies are enabled, click to refresh the list of available proxies.
+- **Select Country**: Choose the country for your proxy, if applicable.
+- **Select Proxy**: Choose a specific proxy from the available list.
 
-In this repository a [Dockerfile](Dockerfile) is provided that mimics the Streamlit Cloud runtime. It can be used for local testing.
+### 3. Start the Scraping Process
 
-A `packages.txt` is provided with the following minimal content:
+Click the "Start Selenium run and take screenshot" button to start the scraping process. The application will:
 
-```txt
-chromium
-chromium-driver
+- Navigate to the specified URL using Selenium.
+- Take a screenshot of the webpage.
+- Extract contact information (emails and phone numbers).
+- Extract all visible text content from the webpage.
+
+### 4. View and Download Results
+
+- **Screenshot**: View the screenshot of the webpage and download it as a PNG file.
+- **Contact Information**: View the extracted emails and phone numbers.
+- **Text Content**: View the extracted text content and download it as a TXT file.
+- **Logs**: View the Selenium logs to debug any issues.
+
+## Project Structure
+
+```plaintext
+streamlit-cloud-scraper/
+├── logs/                 # Log files generated by Selenium
+├── screenshots/          # Screenshots taken by Selenium
+├── streamlit_app.py      # Main Streamlit application script
+├── requirements.txt      # Python dependencies
+└── README.md             # Documentation file
 ```
 
-A `requirements.txt` is provided with the following minimal content:
+## Troubleshooting
 
-```txt
-streamlit
-selenium
-```
+- **Chromedriver Issues**: Ensure that `chromedriver` is installed and properly set up in your PATH. You can download it from [here](https://sites.google.com/chromium.org/driver/).
+- **Proxy Errors**: Make sure the proxy settings are correct and that the proxy is functional.
+- **Permissions**: Ensure the application has the necessary permissions to create directories and write files in the working directory.
 
-## Docker :whale2:
 
-### Docker Container local
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-The provided [Dockerfile](Dockerfile) tries to mimic the Streamlit Cloud runtime.
+---
 
-Build local custom Docker Image from Dockerfile
-
-```shell
-docker build --progress=plain --tag selenium:latest .
-```
-
-Run custom Docker Container
-
-```shell
-docker run -ti -p 8501:8501 --rm selenium:latest
-docker run -ti -p 8501:8501 --rm selenium:latest /bin/bash
-docker run -ti -p 8501:8501 -v $(pwd):/app --rm selenium:latest  # linux
-docker run -ti -p 8501:8501 -v ${pwd}:/app --rm selenium:latest  # powershell
-docker run -ti -p 8501:8501 -v %cd%:/app --rm selenium:latest    # cmd.exe
-```
-
-## Selenium :eye:
-
-<https://selenium-python.readthedocs.io/getting-started.html>
-
-```sh
-pip install selenium
-```
-
-### Chromium :spider_web:
-
-Required packages to install
-
-```shell
-apt install chromium
-apt install chromium-driver
-```
-
-### Chromium Options
-
-<https://peter.sh/experiments/chromium-command-line-switches/>
-
-## undetected_chromedriver :man_shrugging:
-
-> Another option to try, not yet done...
-
-- <https://github.com/ultrafunkamsterdam/undetected-chromedriver>
-- *Resources*
-  - <https://datawookie.dev/blog/2022/10/undetected-chromedriver/>
-  - <https://stackoverflow.com/questions/74469556/undetected-chromedriver-with-proxy>
-  - <https://stackoverflow.com/questions/72919814/undetected-chromedriver-is-not-bypassing-in-headless-mode>
-  - <https://stackoverflow.com/questions/73838436/why-cant-i-connect-to-chrome-when-using-the-undetected-chromedriver>
-  - <https://stackoverflow.com/questions/74793705/how-to-load-chrome-options-using-undetected-chrome>
-  - <https://www.youtube.com/watch?v=6SDzRN1aHiI>
-
-## Status :heavy_check_mark:
-
-> Last changed: 2024-06-13
+This Markdown file (`README.md`) should be placed in the root directory of your project. It provides an overview of the application, installation instructions, usage guidelines, and other relevant information.
