@@ -12,6 +12,7 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from bs4 import BeautifulSoup
 
 
 def get_logpath() -> str:
@@ -43,6 +44,13 @@ def extract_contact_info(html_content: str) -> dict:
         "phone_numbers": re.findall(r"\+?\d[\d -]{8,}\d", html_content)
     }
     return contact_info
+
+
+def extract_text_content(html_content: str) -> str:
+    """Extract all text from the HTML content."""
+    soup = BeautifulSoup(html_content, "html.parser")
+    text = soup.get_text(separator="\n")
+    return text
 
 
 def get_chromedriver_path() -> str:
@@ -99,7 +107,7 @@ def validate_and_format_url(url: str) -> str:
     return url
 
 
-def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: str, screenshot_dir: str) -> Tuple[str, dict]:
+def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: str, screenshot_dir: str) -> Tuple[str, dict, str]:
     """Run Selenium to navigate to a webpage, take a screenshot, and extract contact information."""
     url = validate_and_format_url(url)
     screenshot_path = generate_screenshot_filename(url, screenshot_dir)
@@ -114,11 +122,12 @@ def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: st
             driver.save_screenshot(screenshot_path)
             html_content = driver.page_source
             contact_info = extract_contact_info(html_content)
+            text_content = extract_text_content(html_content)
         except Exception as e:
             st.error(body='Selenium Exception occurred!', icon='🔥')
             st.error(body=str(e), icon='🔥')
-            return None, None
-    return screenshot_path, contact_info
+            return None, None, None
+    return screenshot_path, contact_info, text_content
 
 
 def get_python_version() -> str:
@@ -174,7 +183,7 @@ if __name__ == "__main__":
 
     with middle:
         st.title('Streamlit Cloud Scraper 🕸️')
-        st.markdown('''This app allows you to take screenshots of web pages, extract contact information, and view the results.''')
+        st.markdown('''This app allows you to take screenshots of web pages, extract contact information, view and download scraped text, and download the screenshots.''')
 
         # Input field for the user to enter a URL
         url = st.text_input("Enter the URL of the website you want to screenshot:", value="https://www.unibet.fr/sport/hub/euro-2024")
@@ -275,11 +284,15 @@ if __name__ == "__main__":
                 socksStr = None
 
             with st.spinner('Selenium is running, please wait...'):
-                screenshot_path, contact_info = run_selenium_and_screenshot(logpath=logpath, url=url, proxy=st.session_state.proxy, socksStr=socksStr, screenshot_dir=screenshot_dir)
+                screenshot_path, contact_info, text_content = run_selenium_and_screenshot(logpath=logpath, url=url, proxy=st.session_state.proxy, socksStr=socksStr, screenshot_dir=screenshot_dir)
 
                 if screenshot_path:
                     st.success(body='Screenshot taken successfully!', icon='🎉')
                     st.image(screenshot_path, caption="Screenshot of the webpage", use_column_width=True)
+
+                    with open(screenshot_path, "rb") as file:
+                        st.download_button(label="Download Screenshot", data=file, file_name=os.path.basename(screenshot_path), mime="image/png")
+
                 else:
                     st.error('Failed to take screenshot.', icon='🔥')
 
@@ -296,6 +309,17 @@ if __name__ == "__main__":
                         st.write(contact_info["phone_numbers"])
                     else:
                         st.write("No phone numbers found.")
+
+                if text_content:
+                    st.header("Extracted Text Content")
+                    st.text_area("All Text Content", text_content, height=300)
+
+                    st.download_button(
+                        label="Download Text Content",
+                        data=text_content,
+                        file_name="scraped_text.txt",
+                        mime="text/plain"
+                    )
                 
                 st.info('Selenium log files are shown below...', icon='⬇️')
                 show_selenium_log(logpath=logpath)
