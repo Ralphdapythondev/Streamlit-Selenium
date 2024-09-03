@@ -92,8 +92,16 @@ def show_selenium_log(logpath: str):
         st.error('No log file found!', icon='🔥')
 
 
+def validate_and_format_url(url: str) -> str:
+    """Ensure the URL starts with http:// or https://, otherwise prepend https://."""
+    if not url.startswith(("http://", "https://")):
+        return "https://" + url
+    return url
+
+
 def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: str, screenshot_dir: str) -> Tuple[str, dict]:
     """Run Selenium to navigate to a webpage, take a screenshot, and extract contact information."""
+    url = validate_and_format_url(url)
     screenshot_path = generate_screenshot_filename(url, screenshot_dir)
     options = get_webdriver_options(proxy=proxy, socksStr=socksStr)
     service = get_webdriver_service(logpath=logpath)
