@@ -9,7 +9,6 @@ import countryflag
 import pandas as pd
 import requests
 import streamlit as st
-from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -22,7 +21,7 @@ def get_proxyscrape_socks4(country: str = 'all', protocol: str = 'socks4') -> tu
     PROXYSCRAPE_URL = 'https://api.proxyscrape.com/v3/free-proxy-list/get'
     params = {
         'request': 'displayproxies',
-        'proxy_format' : 'protocolipport',
+        'proxy_format': 'protocolipport',
         'format': 'json',
         'protocol': protocol,
         'timeout': 2000,
@@ -140,13 +139,12 @@ def show_selenium_log(logpath: str):
         st.error('No log file found!', icon='🔥')
 
 
-def run_selenium_and_screenshot(logpath: str, proxy: str, socksStr: str) -> str:
+def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: str) -> str:
     """Run Selenium to navigate to a webpage and take a screenshot."""
     screenshot_path = os.path.join(os.getcwd(), "screenshot.png")
     options = get_webdriver_options(proxy=proxy, socksStr=socksStr)
     service = get_webdriver_service(logpath=logpath)
     with webdriver.Chrome(options=options, service=service) as driver:
-        url = "https://www.unibet.fr/sport/hub/euro-2024"
         try:
             driver.get(url)
             time.sleep(2)
@@ -193,6 +191,9 @@ if __name__ == "__main__":
             If you disable the proxy, the app will usually fail on streamlit cloud to load the page.
             ''', unsafe_allow_html=True)
         st.markdown('---')
+        
+        # Input field for the user to enter a URL
+        url = st.text_input("Enter the URL of the website you want to screenshot:", value="https://www.unibet.fr/sport/hub/euro-2024")
         
         middle_left, middle_right = st.columns([9, 10], gap="medium")
         
@@ -290,7 +291,7 @@ if __name__ == "__main__":
                 socksStr = None
             
             with st.spinner('Selenium is running, please wait...'):
-                screenshot_path = run_selenium_and_screenshot(logpath=logpath, proxy=st.session_state.proxy, socksStr=socksStr)
+                screenshot_path = run_selenium_and_screenshot(logpath=logpath, url=url, proxy=st.session_state.proxy, socksStr=socksStr)
                 
                 if os.path.exists(screenshot_path):
                     st.success(body='Screenshot taken successfully!', icon='🎉')
