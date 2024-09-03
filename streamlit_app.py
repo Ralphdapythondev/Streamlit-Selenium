@@ -22,6 +22,7 @@ def get_logpath() -> str:
 
 
 def create_screenshot_dir():
+    """Create and return the directory for storing screenshots."""
     screenshot_dir = os.path.join(os.getcwd(), "screenshots")
     os.makedirs(screenshot_dir, exist_ok=True)
     return screenshot_dir
@@ -45,10 +46,12 @@ def extract_contact_info(html_content: str) -> dict:
 
 
 def get_chromedriver_path() -> str:
+    """Return the path to the chromedriver executable."""
     return shutil.which('chromedriver')
 
 
 def get_webdriver_options(proxy: str = None, socksStr: str = None) -> Options:
+    """Return configured Selenium WebDriver options."""
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -65,6 +68,7 @@ def get_webdriver_options(proxy: str = None, socksStr: str = None) -> Options:
 
 
 def get_webdriver_service(logpath) -> Service:
+    """Create and return a Selenium WebDriver service."""
     service = Service(
         executable_path=get_chromedriver_path(),
         log_output=logpath,
@@ -73,11 +77,13 @@ def get_webdriver_service(logpath) -> Service:
 
 
 def delete_selenium_log(logpath: str):
+    """Delete the Selenium log file if it exists."""
     if os.path.exists(logpath):
         os.remove(logpath)
 
 
 def show_selenium_log(logpath: str):
+    """Display the contents of the Selenium log file."""
     if os.path.exists(logpath):
         with open(logpath) as f:
             content = f.read()
@@ -105,6 +111,36 @@ def run_selenium_and_screenshot(logpath: str, url: str, proxy: str, socksStr: st
             st.error(body=str(e), icon='🔥')
             return None, None
     return screenshot_path, contact_info
+
+
+def get_python_version() -> str:
+    """Return the current Python version."""
+    try:
+        result = subprocess.run(['python', '--version'], capture_output=True, text=True)
+        version = result.stdout.strip()
+        return version
+    except Exception as e:
+        return str(e)
+
+
+def get_chromium_version() -> str:
+    """Return the Chromium version installed on the system."""
+    try:
+        result = subprocess.run(['chromium', '--version'], capture_output=True, text=True)
+        version = result.stdout.strip()
+        return version
+    except Exception as e:
+        return str(e)
+
+
+def get_chromedriver_version() -> str:
+    """Return the Chromedriver version installed on the system."""
+    try:
+        result = subprocess.run(['chromedriver', '--version'], capture_output=True, text=True)
+        version = result.stdout.strip()
+        return version
+    except Exception as e:
+        return str(e)
 
 
 if __name__ == "__main__":
