@@ -4,3 +4,4 @@ selenium
 requests
 lxml
 countryflag
+beautifulsoup4
