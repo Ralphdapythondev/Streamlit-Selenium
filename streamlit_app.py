@@ -118,26 +118,6 @@ def get_webdriver_options(proxy: str = None, socksStr: str = None) -> Options:
     return options
 
 
-def get_messages_from_log(logs) -> List:
-    messages = list()
-    for entry in logs:
-        logmsg = json.loads(entry["message"])["message"]
-        if logmsg["method"] == "Network.responseReceived": # Filter out HTTP responses
-            # check for 200 and 204 status codes
-            if logmsg["params"]["response"]["status"] not in [200, 204]:
-                messages.append(logmsg)
-        elif logmsg["method"] == "Network.responseReceivedExtraInfo":
-            if logmsg["params"]["statusCode"] not in [200, 204]:
-                messages.append(logmsg)
-    if len(messages) == 0:
-        return None
-    return messages
-
-
-def prettify_html(html_content) -> str:
-    return etree.tostring(html.fromstring(html_content), pretty_print=True).decode('utf-8')
-
-
 def get_webdriver_service(logpath) -> Service:
     service = Service(
         executable_path=get_chromedriver_path(),
@@ -160,9 +140,9 @@ def show_selenium_log(logpath: str):
         st.error('No log file found!', icon='🔥')
 
 
-def run_selenium(logpath: str, proxy: str, socksStr: str) -> Tuple[str, List, List, str]:
-    name = None
-    html_content = None
+def run_selenium_and_screenshot(logpath: str, proxy: str, socksStr: str) -> str:
+    """Run Selenium to navigate to a webpage and take a screenshot."""
+    screenshot_path = os.path.join(os.getcwd(), "screenshot.png")
     options = get_webdriver_options(proxy=proxy, socksStr=socksStr)
     service = get_webdriver_service(logpath=logpath)
     with webdriver.Chrome(options=options, service=service) as driver:
@@ -170,17 +150,15 @@ def run_selenium(logpath: str, proxy: str, socksStr: str) -> Tuple[str, List, Li
         try:
             driver.get(url)
             time.sleep(2)
-            # Wait for the element to be rendered:
-            element = WebDriverWait(driver=driver, timeout=10).until(lambda x: x.find_elements(by=By.CSS_SELECTOR, value="h2.eventcard-content-name"))
-            name = element[0].get_property('attributes')[0]['name']
-            html_content = driver.page_source
+            # Take a screenshot
+            driver.save_screenshot(screenshot_path)
         except Exception as e:
-            st.error(body='Selenium Exception occured!', icon='🔥')
+            st.error(body='Selenium Exception occurred!', icon='🔥')
             st.error(body=str(e), icon='🔥')
         finally:
             performance_log = driver.get_log('performance')
             browser_log = driver.get_log('browser')
-    return name, performance_log, browser_log, html_content
+    return screenshot_path
 
 
 if __name__ == "__main__":
@@ -194,11 +172,14 @@ if __name__ == "__main__":
         st.session_state.df = None
     if "countries" not in st.session_state:
         st.session_state.countries = None
-    logpath=get_logpath()
+    
+    logpath = get_logpath()
     delete_selenium_log(logpath=logpath)
+    
     st.set_page_config(page_title="Selenium Test", page_icon='🕸️', layout="wide",
                         initial_sidebar_state='collapsed')
     left, middle, right = st.columns([2, 11, 1], gap="small")
+    
     with middle:
         st.title('Selenium on Streamlit Cloud 🕸️')
         st.markdown('''This app is only a very simple test for **Selenium** running on **Streamlit Cloud** runtime.
@@ -208,23 +189,28 @@ if __name__ == "__main__":
             A link is called and waited for the existence of a specific class to read a specific property.
             If there is no error message, the action was successful. Afterwards the log files are displayed.
             Since the target website has geoip blocking enabled, a proxy is required to bypass this and can be selected optionally.
-            However, the use of proxies is not guaranteed to work, as they may not working properly.
+            However, the use of proxies is not guaranteed to work, as they may not be working properly.
             If you disable the proxy, the app will usually fail on streamlit cloud to load the page.
             ''', unsafe_allow_html=True)
         st.markdown('---')
+        
         middle_left, middle_right = st.columns([9, 10], gap="medium")
+        
         with middle_left:
             st.header('Proxy')
             st.session_state.useproxy = st.toggle(label='Enable proxy to bypass geoip blocking', value=True, disabled=False)
+            
             if st.session_state.useproxy:
                 socks5 = st.toggle(label='Use Socks5 proxy', value=True, disabled=False)
+                
                 if socks5 != st.session_state.socks5:
                     st.session_state.socks5 = socks5
                     st.session_state.proxy = None
                     st.session_state.proxies = None
                     st.session_state.df = None
+                
                 if st.session_state.socks5:
-                    # try to gather and use socks5 proxies
+                    # Gather and use socks5 proxies
                     if st.button(label='Refresh proxies from free Socks5 list'):
                         success, proxies = get_mtproto_socks5()
                         if not success:
@@ -240,7 +226,7 @@ if __name__ == "__main__":
                                 st.session_state.df = None
                                 st.session_state.countries = None
                 else:
-                    # try to gather and use socks4 proxies
+                    # Gather and use socks4 proxies
                     if st.button(label='Refresh proxies from free Socks4 list'):
                         success, proxies = get_proxyscrape_socks4(country='all', protocol='socks4')
                         if not success:
@@ -255,19 +241,24 @@ if __name__ == "__main__":
                             else:
                                 st.session_state.df = None
                                 st.session_state.countries = None
+                
                 if st.session_state.countries is not None:
-                    # limit countries to a set of countries
+                    # Limit countries to a set of allowed countries
                     allowed_countries = ['FR', 'GB', 'DE', 'ES', 'CH', 'US']
                     st.session_state.countries = [country for country in st.session_state.countries if country in allowed_countries]
+                
                 if st.session_state.df is not None and st.session_state.countries is not None:
                     selected_country = st.selectbox(label='Select a country', options=st.session_state.countries)
                     selected_country_flag = get_flag(selected_country)
                     st.info(f'Selected Country: {selected_country} {selected_country_flag}', icon='🌍')
+                    
                     if st.session_state.socks5:
                         selected_country_proxies = st.session_state.df[st.session_state.df['country'] == selected_country]
                     else:
                         selected_country_proxies = st.session_state.df[st.session_state.df['ip_data.countryCode'] == selected_country]
+                    
                     st.session_state.proxies = set(selected_country_proxies[['ip', 'port']].apply(lambda x: f"{x.iloc[0]}:{x.iloc[1]}", axis=1).tolist())
+                    
                     if st.session_state.proxies:
                         st.session_state.proxy = st.selectbox(label='Select a proxy from the list', options=st.session_state.proxies, index=0)
                         st.info(body=f'{st.session_state.proxy} {get_flag(selected_country)}', icon='😎')
@@ -276,6 +267,7 @@ if __name__ == "__main__":
                 st.session_state.proxies = None
                 st.session_state.df = None
                 st.info('Proxy is disabled', icon='🔒')
+        
         with middle_right:
             st.header('Versions')
             st.text('This is only for debugging purposes.\n'
@@ -285,29 +277,27 @@ if __name__ == "__main__":
                     f'- Selenium:      {webdriver.__version__}\n'
                     f'- Chromedriver:  {get_chromedriver_version()}\n'
                     f'- Chromium:      {get_chromium_version()}')
+        
         st.markdown('---')
-
-        if st.button('Start Selenium run'):
+        
+        if st.button('Start Selenium run and take screenshot'):
             st.info(f'Selected Proxy: {st.session_state.proxy}', icon='☢️')
+            
             if st.session_state.useproxy:
                 socksStr = 'socks5' if st.session_state.socks5 else 'socks4'
                 st.info(f'Selected Socks: {socksStr}', icon='🧦')
             else:
                 socksStr = None
+            
             with st.spinner('Selenium is running, please wait...'):
-                result, performance_log, browser_log, html_content = run_selenium(logpath=logpath, proxy=st.session_state.proxy, socksStr=socksStr)
-                if result is None:
-                    st.error('There was an error, no result found!', icon='🔥')
+                screenshot_path = run_selenium_and_screenshot(logpath=logpath, proxy=st.session_state.proxy, socksStr=socksStr)
+                
+                if os.path.exists(screenshot_path):
+                    st.success(body='Screenshot taken successfully!', icon='🎉')
+                    st.image(screenshot_path, caption="Screenshot of the webpage", use_column_width=True)
                 else:
-                    st.success(body=f'Result: {result}', icon='🎉')
+                    st.error('Failed to take screenshot.', icon='🔥')
+                
                 st.info('Selenium log files are shown below...', icon='⬇️')
-                performance_log_msg = get_messages_from_log(performance_log)
-                if performance_log_msg is not None:
-                    st.header('Performance Log (filtered) - only non 200/204 status codes')
-                    st.code(body=json.dumps(performance_log_msg, indent=4), language='json', line_numbers=True)
-                st.header('Selenium Log')
                 show_selenium_log(logpath=logpath)
-                if result is None and html_content is not None:
-                    st.header('HTML Content')
-                    st.code(body=prettify_html(html_content), language='html', line_numbers=True)
                 st.balloons()
