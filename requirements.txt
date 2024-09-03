@@ -5,3 +5,4 @@ requests
 lxml
 countryflag
 beautifulsoup4
+requests
