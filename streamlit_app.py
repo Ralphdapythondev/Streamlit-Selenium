@@ -173,7 +173,7 @@ if __name__ == "__main__":
     left, middle, right = st.columns([2, 11, 1], gap="small")
 
     with middle:
-        st.title('Selenium on Streamlit Cloud 🕸️')
+        st.title('Streamlit Cloud Scraper 🕸️')
         st.markdown('''This app allows you to take screenshots of web pages, extract contact information, and view the results.''')
 
         # Input field for the user to enter a URL
