@@ -5,4 +5,6 @@ requests
 lxml
 countryflag
 beautifulsoup4
+validators
 requests
+
